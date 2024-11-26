@@ -134,6 +134,7 @@ public class LoginHandler(ILogger<LoginHandler> logger)
 
         public void SetUsername(string value)
         {
+            // TODO: Can I make the setter a func or a custom type with a marshaler?
             if (value.Length > 12)
                 throw new ArgumentException("Username cannot be longer than 12 characters.");
 
@@ -154,6 +155,7 @@ public class LoginHandler(ILogger<LoginHandler> logger)
 
             fixed (byte* passwordPtr = password)
             {
+                // TODO: Fix this
                 var bytes = Encoding.ASCII.GetBytes(value);
                 for (int i = 0; i < 13; i++)
                 {
@@ -164,9 +166,13 @@ public class LoginHandler(ILogger<LoginHandler> logger)
 
         public string GetUsername()
         {
+            // TODO: Can I make this get string a function
+            // TODO: Can this be done without allocations?
             fixed (byte* namePtr = name)
             {
-                return Encoding.ASCII.GetString(namePtr, 13).TrimEnd('\0');
+                Span<byte> nameSpan = new Span<byte>(namePtr, 13);
+                return Encoding.ASCII.GetString(nameSpan).TrimEnd('\0');
+                //return Encoding.ASCII.GetString(namePtr, 13).TrimEnd('\0');
             }
         }
 
