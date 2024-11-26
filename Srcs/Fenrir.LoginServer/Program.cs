@@ -188,7 +188,7 @@ readBuffer[21] = 0x00; // Null terminator
 logger.LogInformation(Utils.HexDump(readBuffer));
 
 ReadOnlySequence<byte> sequence = new ReadOnlySequence<byte>(readBuffer);
-WubaSequenceReader.ReadItems(sequence, false);
+WubaSequenceReader.ReadItems(sequence);
 
 public class WubaSequenceReader
 {
