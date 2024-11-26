@@ -176,7 +176,7 @@ logger.LogInformation($"Username: {loginRequestPacket2.GetUsername()} Password: 
  * then the next 4 bytes to an int value of 2
  * then write a string of 13 bytes length terminated with a null byte 00
  */
-byte[] readBuffer = new byte[35];
+byte[] readBuffer = new byte[36];
 readBuffer[0] = 0x02;
 BitConverter.TryWriteBytes(readBuffer.AsSpan(1, 4), 1);
 BitConverter.TryWriteBytes(readBuffer.AsSpan(5, 4), 2);
@@ -192,75 +192,49 @@ WubaSequenceReader.ReadItems(sequence, false);
 
 public class WubaSequenceReader
 {
-    public static SequencePosition ReadItems(in ReadOnlySequence<byte> sequence, bool isCompleted)
+    public static SequencePosition ReadItems(in ReadOnlySequence<byte> sequence)
     {
         var reader = new SequenceReader<byte>(sequence);
 
-        // reader.TryPeek(out var packetId);
+        // TODO: Decryption on pipeline write after socket read.
 
         // Loop until we have read the entire sequence.
         while (!reader.End)
         {
+            if (reader.Remaining < 9)
+            {
+                return reader.Position;
+            }
 
             var packetHeader = Marshaling.DeserializeStructFromReadOnlySequence<PacketHeader>(reader.UnreadSequence);
             reader.Advance(Marshal.SizeOf<PacketHeader>()); // 9 bytes
             Console.WriteLine($"PacketHeader: {packetHeader.PacketType:X2} {packetHeader.Unknown1} {packetHeader.Unknown2}");
             Console.WriteLine($"PacketHeader Dump: {Utils.HexDump(packetHeader)}");
         
+            // TODO: Get packet info
+            // TODO: Read on packet.
+
+            var expectedPacketSize = 26;
+            if (reader.Remaining < expectedPacketSize)
+            {
+                reader.Rewind(9);
+                return reader.Position;
+            }
+            
             if (packetHeader.PacketType == 0x02)
             {
                 var loginRequestPacket =
                     Marshaling.DeserializeStructFromReadOnlySequence<LoginHandler.LoginRequestPacket>(
                         reader.UnreadSequence);
-                //reader.Advance(Marshal.SizeOf<LoginHandler.LoginRequestPacket>());
                 Console.WriteLine($"LoginRequestPacket:\n{loginRequestPacket.GetUsername()}");
                 Console.WriteLine($"LoginRequestPacket Dump:\n{Utils.HexDump(loginRequestPacket)}");
             }
-        
-
-            break;
-            /*if (reader.TryReadExact(9, out var headerSequence))
-            {
-                
-            }*/
             
-            byte Comma = 0x2C; // 0x2C is the Hex code for a comma.
-            
-            if (reader.TryReadTo(out ReadOnlySpan<byte> itemBytes, Comma, advancePastDelimiter: true))
-            {
-                // We have an item to handle.
-                var stringLine = Encoding.UTF8.GetString(itemBytes);
-                Console.WriteLine(stringLine);
-            } else if (isCompleted)
-            {
-                // Read last item which has no final delimiter.
-                // Note: We do not want to read the final item as we need a full struct.
-                // Maybe in debug mode we can advance if unhandled after a time.
-                // But normally you would want to disconnect if no structures received in an expected time.
-                var stringLine = ReadLastItem(sequence.Slice(reader.Position));
-                Console.WriteLine(stringLine);
-                reader.Advance(sequence.Length);
-            }
-            else
-            {
-                // No more items in this sequence.
-                break;
-            }
-            
-            // if (!reader.TryRead(out var item)) // Try to read an item.
-            // {
-            //     break; // If we can't read an item, break out of the loop.
-            // }
-            //
-            // // Process the item.
+            // Marshal.SizeOf<LoginHandler.LoginRequestPacket>()
+            reader.Advance(expectedPacketSize);
         }
 
         return reader.Position;
     }
 
-    private static string ReadLastItem(in ReadOnlySequence<byte> sequence)
-    {
-        Console.WriteLine($"ReadLastItem: {sequence.Length}");
-        return "TEST";
-    }
 }

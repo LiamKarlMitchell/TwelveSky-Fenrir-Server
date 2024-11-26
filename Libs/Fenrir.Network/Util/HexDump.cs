@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -12,7 +13,8 @@ public static partial class Utils
     {
         return type.IsValueType && type.StructLayoutAttribute != null && Marshal.SizeOf(type) > 0;
     }
-    
+
+    // TODO: make these work directly on the span/sequence/memory as to not copy.
     private static string HexDump(SequenceReader<byte> sequence, int bytesPerLine = 16)
     {
         return HexDump(sequence.UnreadSpan.ToArray(), bytesPerLine);
@@ -62,10 +64,13 @@ public static partial class Utils
         var lineLength = firstCharColumn
                          + bytesPerLine // - characters to show the ascii value
                          + Environment.NewLine.Length; // Carriage return and line feed (should normally be 2)
-
+        
         var line = (new string(' ', lineLength - Environment.NewLine.Length) + Environment.NewLine).ToCharArray();
+        string sizeInfo = $"Size: {bytesLength} ";
+
         var expectedLines = (bytesLength + bytesPerLine - 1) / bytesPerLine;
-        var result = new StringBuilder(expectedLines * lineLength);
+        var result = new StringBuilder(sizeInfo.Length + Environment.NewLine.Length + (expectedLines * lineLength));
+        result.AppendLine(sizeInfo);
 
         for (var i = 0; i < bytesLength; i += bytesPerLine)
         {
@@ -95,8 +100,14 @@ public static partial class Utils
                     var b = bytes[i + j];
                     line[hexColumn] = HexChars[(b >> 4) & 0xF];
                     line[hexColumn + 1] = HexChars[b & 0xF];
-                    line[charColumn] = b < 32 ? '.' : (char)b; // &middot; if html.
+                    // TODO: May not handle UTF-8 correctly.
+                    // TODO: May not handle other chars correctly.
+                    bool isTypableAscii = b <= 32 && b <= 126;
+                    line[charColumn] = isTypableAscii ? '.' : (char)b; // &middot; if html.
                 }
+                
+                // TODO: Colour coding?
+                // Make 0 bytes dimmer, make control characters import colour?
 
                 hexColumn += 3;
                 charColumn++;
