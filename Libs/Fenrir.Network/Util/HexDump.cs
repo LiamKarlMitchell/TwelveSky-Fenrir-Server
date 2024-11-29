@@ -45,6 +45,7 @@ public static partial class Utils
         return HexDump(bytes, bytesPerLine);
     }
     
+    // TODO: Convert to span.
     public static string HexDump(byte[] bytes, int bytesPerLine = 16)
     {
         if (bytes == null) return "<null>";

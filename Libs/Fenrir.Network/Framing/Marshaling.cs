@@ -25,7 +25,7 @@ public class Marshaling
         MemoryMarshal.Write(destination.Span, in value);
     }
 
-    public static T DeserializeStructFromSpan<T>(ReadOnlySpan<byte> source) where T : struct
+    public static T DeserializeStruct<T>(ReadOnlySpan<byte> source) where T : struct
     {
         // TODO: Do I need this check here, its done inside Read as well?
         if (source.Length < Marshal.SizeOf<T>())
@@ -40,7 +40,7 @@ public class Marshaling
         return MemoryMarshal.Read<T>(source);
     }
     
-    public static T DeserializeStructFromReadOnlySequence<T>(ReadOnlySequence<byte> sequence) where T : struct
+    public static T DeserializeStruct<T>(ReadOnlySequence<byte> sequence) where T : struct
     {
         var requiredSize = Marshal.SizeOf<T>();
         // TODO: Do I need this check here, its done inside Read as well?
@@ -64,7 +64,7 @@ public class Marshaling
         return MemoryMarshal.Read<T>(copy);
     }
     
-    public static T DeserializeStructFromSpan<T>(ReadOnlyMemory<byte> source) where T : struct
+    public static T DeserializeStruct<T>(ReadOnlyMemory<byte> source) where T : struct
     {
         // TODO: Do I need this check here, its done inside Read as well?
         if (source.Length < Marshal.SizeOf<T>())

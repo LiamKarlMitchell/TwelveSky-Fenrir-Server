@@ -21,15 +21,16 @@ public abstract class FenrirServer
     private readonly ILogger _logger;
     private readonly ILoggerFactory _loggerFactory;
     //private readonly IMessageDispatcher<TPacketType, TMessage> _messageDispatcher;
-    private readonly FenrirServerOptions _options;
-    private readonly IServiceProvider _provider;
+    protected readonly FenrirServerOptions _options;
+    protected readonly IServiceProvider _provider;
     private readonly Socket _socket;
     private readonly PeriodicTimer _timer;
-    private readonly List<IClient> _clients;
-    
+    protected readonly List<IClient> _clients;
+    protected readonly IPacketCollection _packetCollection;
+
     /// <summary>Gets the session collection of type <typeparamref name="ISession" />.</summary>
     public ISessionCollection<ISession> Sessions { get; }
-    
+
 
     /// <summary>Initializes a new instance of the <see cref="FenrirServer{ISession,TMessage}" /> class.</summary>
     /// <param name="options">The server options.</param>
@@ -37,19 +38,22 @@ public abstract class FenrirServer
     /// <param name="loggerFactory">The logger factory.</param>
     /// <param name="provider">The service provider.</param>
     /// <param name="sessions">The session collection.</param>
+    /// <param name="packetCollection"></param>
     protected FenrirServer(
         IOptions<FenrirServerOptions> options,
         //IMessageDispatcher<TPacketType, TMessage> messageDispatcher,
         ILoggerFactory loggerFactory,
-        IServiceProvider provider)
+        IServiceProvider provider,
+        IPacketCollection packetCollection)
     {
         _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         _cts = new CancellationTokenSource();
         _options = options.Value;
         //_messageDispatcher = messageDispatcher;
         _loggerFactory = loggerFactory;
-        _provider = provider;
         _logger = loggerFactory.CreateLogger("Fenrir.Transport.FenrirServer");
+        _provider = provider;
+        _packetCollection = packetCollection;
         _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_options.KeepAliveInterval));
         Sessions = new SessionCollection(options);
         _clients = new List<IClient>(); // TODO: Can use struct or span?
@@ -145,30 +149,30 @@ public abstract class FenrirServer
         }
     }
 
-    private void ReceiveAsyncForClient(IClient client, CancellationToken ctsToken)
-    {
-        
-        // Receive data from client.
-        // client.ReceiveAsync(ctsToken);
-
-        // Process message(s)? in buffer?
-
-        // TODO: Consider fairness, should we process all messages for 1 client before any other, or process 1 message per client at a time?
-        // The simpliest option is to process all available, so I'll go with that for now.
-
-        // client.ReceiveBuffer.Span
-        // TODO: Read?
-        // IPacketHeader header = default;
-        // IPacket packet = default;
-        // // TODO: Get packet id from header
-        // TODO: get optional packet based on id
-        // TODO: call handler
-        
-        // If there are bytes left in the buffer, we need to move them to the start of the buffer.
-        //client.ReceiveBuffer.Span.Slice(client.RecvBufferPosition).CopyTo(client.ReceiveBuffer.Span);
-
-        // Send message(s) to cilent?
-    }
+    // private void ReceiveAsyncForClient(IClient client, CancellationToken ctsToken)
+    // {
+    //     
+    //     // Receive data from client.
+    //     // client.ReceiveAsync(ctsToken);
+    //
+    //     // Process message(s)? in buffer?
+    //
+    //     // TODO: Consider fairness, should we process all messages for 1 client before any other, or process 1 message per client at a time?
+    //     // The simpliest option is to process all available, so I'll go with that for now.
+    //
+    //     // client.ReceiveBuffer.Span
+    //     // TODO: Read?
+    //     // IPacketHeader header = default;
+    //     // IPacket packet = default;
+    //     // // TODO: Get packet id from header
+    //     // TODO: get optional packet based on id
+    //     // TODO: call handler
+    //     
+    //     // If there are bytes left in the buffer, we need to move them to the start of the buffer.
+    //     //client.ReceiveBuffer.Span.Slice(client.RecvBufferPosition).CopyTo(client.ReceiveBuffer.Span);
+    //
+    //     // Send message(s) to cilent?
+    // }
 
     protected abstract IClient CreateClient(Socket socket);
 

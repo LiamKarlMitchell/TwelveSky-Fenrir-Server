@@ -28,6 +28,8 @@ public class FenrirServerOptions
 
     /// <summary>Gets the keep alive interval.</summary>
     public int KeepAliveInterval { get; set; }
+    
+    public int RecvBuffersize { get; set; }
 
     internal IPEndPoint GetRemoteEndPoint()
     {

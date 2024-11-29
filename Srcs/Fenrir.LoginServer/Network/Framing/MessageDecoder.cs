@@ -61,7 +61,7 @@ public sealed class MessageDecoder  //: IMessageDecoder
         
         IPacket packet;
         
-        var packetHeader = Marshaling.DeserializeStructFromSpan<PacketHeader>(buffer);
+        var packetHeader = Marshaling.DeserializeStruct<PacketHeader>(buffer);
         buffer = buffer.Slice(9); // TODO: Rather than magic 9, could use Marshal.SizeOf<PacketHeader>() but if its a runtime method rather only call it once?
         
         // TODO: handle exceptions.
@@ -78,7 +78,7 @@ public sealed class MessageDecoder  //: IMessageDecoder
         
         switch ((PacketType)packetHeader.PacketType) {
             case PacketType.LoginRequest:
-                var LoginPacketData = Marshaling.DeserializeStructFromSpan<LoginHandler.LoginRequestPacket>(buffer);
+                var LoginPacketData = Marshaling.DeserializeStruct<LoginHandler.LoginRequestPacket>(buffer);
                 packet = LoginPacketData;
                 buffer = buffer.Slice(Marshal.SizeOf<LoginHandler.LoginRequestPacket>());
                 // TODO: Call handler here?
@@ -96,7 +96,7 @@ public sealed class MessageDecoder  //: IMessageDecoder
     {
         // if (!_deserializers.TryGetValue(type, out var deserializer))
         // {
-            var method = typeof(Marshaling).GetMethod(nameof(Marshaling.DeserializeStructFromSpan), [type]);
+            var method = typeof(Marshaling).GetMethod(nameof(Marshaling.DeserializeStruct), [type]);
             var genericMethod = method.MakeGenericMethod(type);
             var deserializer = (Func<ReadOnlyMemory<byte>, object>)Delegate.CreateDelegate(typeof(Func<ReadOnlyMemory<byte>, object>), genericMethod);
         //     _deserializers[type] = deserializer;

@@ -138,7 +138,7 @@ Type type = typeof(LoginHandler.LoginRequestPacket);
 //var deserializer = (Func<ReadOnlyMemory<byte>, object>)Delegate.CreateDelegate(typeof(Func<ReadOnlyMemory<byte>, object>), genericMethod);
 
 
-var method = typeof(Marshaling).GetMethod(nameof(Marshaling.DeserializeStructFromSpan), new[] { typeof(ReadOnlyMemory<byte>) });
+var method = typeof(Marshaling).GetMethod(nameof(Marshaling.DeserializeStruct), new[] { typeof(ReadOnlyMemory<byte>) });
 var genericMethod = method.MakeGenericMethod(type);
 //var deserializer = (Func<ReadOnlyMemory<byte>, object>)Delegate.CreateDelegate(typeof(Func<ReadOnlyMemory<byte>, object>), genericMethod);
 
@@ -187,54 +187,54 @@ readBuffer[21] = 0x00; // Null terminator
 
 logger.LogInformation(Utils.HexDump(readBuffer));
 
-ReadOnlySequence<byte> sequence = new ReadOnlySequence<byte>(readBuffer);
-WubaSequenceReader.ReadItems(sequence);
+// ReadOnlySequence<byte> sequence = new ReadOnlySequence<byte>(readBuffer);
+// WubaSequenceReader.ReadItems(sequence);
 
-public class WubaSequenceReader
-{
-    public static SequencePosition ReadItems(in ReadOnlySequence<byte> sequence)
-    {
-        var reader = new SequenceReader<byte>(sequence);
-
-        // TODO: Decryption on pipeline write after socket read.
-
-        // Loop until we have read the entire sequence.
-        while (!reader.End)
-        {
-            if (reader.Remaining < 9)
-            {
-                return reader.Position;
-            }
-
-            var packetHeader = Marshaling.DeserializeStructFromReadOnlySequence<PacketHeader>(reader.UnreadSequence);
-            reader.Advance(Marshal.SizeOf<PacketHeader>()); // 9 bytes
-            Console.WriteLine($"PacketHeader: {packetHeader.PacketType:X2} {packetHeader.Unknown1} {packetHeader.Unknown2}");
-            Console.WriteLine($"PacketHeader Dump: {Utils.HexDump(packetHeader)}");
-        
-            // TODO: Get packet info
-            // TODO: Read on packet.
-
-            var expectedPacketSize = 26;
-            if (reader.Remaining < expectedPacketSize)
-            {
-                reader.Rewind(9);
-                return reader.Position;
-            }
-            
-            if (packetHeader.PacketType == 0x02)
-            {
-                var loginRequestPacket =
-                    Marshaling.DeserializeStructFromReadOnlySequence<LoginHandler.LoginRequestPacket>(
-                        reader.UnreadSequence);
-                Console.WriteLine($"LoginRequestPacket:\n{loginRequestPacket.GetUsername()}");
-                Console.WriteLine($"LoginRequestPacket Dump:\n{Utils.HexDump(loginRequestPacket)}");
-            }
-            
-            // Marshal.SizeOf<LoginHandler.LoginRequestPacket>()
-            reader.Advance(expectedPacketSize);
-        }
-
-        return reader.Position;
-    }
-
-}
+// public class WubaSequenceReader
+// {
+//     public static SequencePosition ReadItems(in ReadOnlySequence<byte> sequence)
+//     {
+//         var reader = new SequenceReader<byte>(sequence);
+//
+//         // TODO: Decryption on pipeline write after socket read.
+//
+//         // Loop until we have read the entire sequence.
+//         while (!reader.End)
+//         {
+//             if (reader.Remaining < 9)
+//             {
+//                 return reader.Position;
+//             }
+//
+//             var packetHeader = Marshaling.DeserializeStructFromReadOnlySequence<PacketHeader>(reader.UnreadSequence);
+//             reader.Advance(Marshal.SizeOf<PacketHeader>()); // 9 bytes
+//             Console.WriteLine($"PacketHeader: {packetHeader.PacketType:X2} {packetHeader.Unknown1} {packetHeader.Unknown2}");
+//             Console.WriteLine($"PacketHeader Dump: {Utils.HexDump(packetHeader)}");
+//         
+//             // TODO: Get packet info
+//             // TODO: Read on packet.
+//
+//             var expectedPacketSize = 26;
+//             if (reader.Remaining < expectedPacketSize)
+//             {
+//                 reader.Rewind(9);
+//                 return reader.Position;
+//             }
+//             
+//             if (packetHeader.PacketType == 0x02)
+//             {
+//                 var loginRequestPacket =
+//                     Marshaling.DeserializeStructFromReadOnlySequence<LoginHandler.LoginRequestPacket>(
+//                         reader.UnreadSequence);
+//                 Console.WriteLine($"LoginRequestPacket:\n{loginRequestPacket.GetUsername()}");
+//                 Console.WriteLine($"LoginRequestPacket Dump:\n{Utils.HexDump(loginRequestPacket)}");
+//             }
+//             
+//             // Marshal.SizeOf<LoginHandler.LoginRequestPacket>()
+//             reader.Advance(expectedPacketSize);
+//         }
+//
+//         return reader.Position;
+//     }
+//
+// }
